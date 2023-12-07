@@ -1,6 +1,6 @@
 # ProductBot Project
 
-ProductBot is a web application that does amazing things with cats!
+Transform ideas into unique AI art, print on t-shirts, phone cases, and more. Personalized, one-of-a-kind designs at your fingertips."
 
 ## Prerequisites
 
