@@ -2,8 +2,8 @@ import Head from "next/head";
 import Navigation from '../components/Navigation';
 import BackendPreConnect from "../components/BackendPreConnect";
 import DataBasePreConnect from "../components/DataBasePreConnect";
-import ChatComponent from "../components/GeneratePrompts";
 import { useWallet } from "@meshsdk/react";
+import CreatePhoneCaseConversation from "../components/CreatePhoneCase";
 
 export default function Home() {
   const { connected } = useWallet();
@@ -36,15 +36,15 @@ export default function Home() {
               <div className="w-full lg:w-4/5">
                 <div className="flex flex-col space-y-4 items-center justify-center">
                   {/* Card for Generate A Custom Design With AI */}
-                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-4 shadow block hover:bg-gray-100 mx-auto text-center">
+                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-4 lg:p-8 xl:p-12 shadow block hover:bg-gray-100 mx-auto text-center">
                     <div className="transition ease-in duration-200">
-                      <h2 className="text-lg font-semibold">Generate Custom Design With AI</h2>
+                      <h2 className="text-lg font-semibold">Generate Custom Design With The Help of AI</h2>
                       <p className="text-gray-600">Select a few design inputs and watch your custom, one of a kind, phone case come to life.</p>
                     </div>
                   </div>
 
                   {/* Card for Select Your Design */}
-                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-4 shadow block hover:bg-gray-100 mx-auto text-center">
+                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-4 lg:p-8 xl:p-12 shadow block hover:bg-gray-100 mx-auto text-center">
                     <div className="transition ease-in duration-200">
                       <h2 className="text-lg font-semibold">Select Your Favorite Design</h2>
                       <p className="text-gray-600">Select your favorite design and review the mockup for approval.</p>
@@ -52,7 +52,7 @@ export default function Home() {
                   </div>
 
                   {/* Card for Pay, Print, & Ship */}
-                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-3 shadow block hover:bg-gray-100 mx-auto text-center">
+                  <div className="w-full lg:w-4/5 xl:w-2/3 bg-white p-4 lg:p-8 xl:p-12 shadow block hover:bg-gray-100 mx-auto text-center">
                     <div className="transition ease-in duration-200">
                       <h2 className="text-lg font-semibold">Pay, Print, & Ship</h2>
                       <p className="text-gray-600">Go through the checkout process. When the sale is finalized we will print your design and ship it directly to you.</p>
@@ -64,8 +64,8 @@ export default function Home() {
           </div>
 
           <div className="container flex-grow my-4 p-4 text-center">
-            <h3 className="text-xl font-semibold">Let's Get Started</h3>
-            <ChatComponent />
+            <h3 className="text-xl font-semibold">Get Started</h3>
+            <CreatePhoneCaseConversation />
           </div>
         </div>
       </main>
