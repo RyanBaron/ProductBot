@@ -4,13 +4,13 @@ from flask_cors import CORS
 import sys
 import os
 from pymongo import MongoClient
-import uuid
 from bson import ObjectId
 
 app = Flask(__name__)
 CORS(app, origins=["*"], methods=['GET', 'POST', 'OPTIONS'], allow_headers="*")
 
 # Connect to MongoDB
+# Uncomment the below line to connect to a local MongoDB instance
 # client = MongoClient('mongodb://localhost:27017/')
 client = MongoClient('mongodb://mongo:27017/')
 db = client.productbot
@@ -29,40 +29,40 @@ def connect():
 @app.route('/status_db', methods=['GET'])
 def mongodb_status():
     try:
-        # The ismaster command is cheap and does not require auth.
         client.admin.command('ismaster')
         return jsonify({"status": "Success: DB Connection", "success": True})
     except Exception as e:
         return jsonify({"status": f"Failure: Cannot connect to DB: {str(e)}", "success": False})
 
-
-@app.route('/generate_prompt', methods=['GET', 'POST'])
+@app.route('/generate_prompt', methods=['POST'])
 def generate_prompt():
     data = request.json
     topic = data.get('topic', '')
-    job_id = data.get('job_id', '')
+    styles = data.get('styles', [])
+    jobId = data.get('jobId', '')  # Extract jobId
 
     prompt_result = subprocess.run(
-        ['python', 'llms/generate_prompt_llm.py', topic],
-        stdout=sys.stdout,
-        stderr=sys.stderr
+        ['python', 'llms/generate_prompt_llm.py', topic, *styles, jobId],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
     )
 
     print("generate_prompt.js returncode:", prompt_result.returncode)
 
-    # db.aibot.update_one(
-    #    {"_id": job_id},
-    #    {"$set": {"progress": 100, "step": "Done"}}
-    #)
+    # Database update logic (commented out)
+    # if jobId:
+    #     db.aibot.update_one(
+    #         {"_id": ObjectId(jobId)},
+    #         {"$set": {"progress": 100, "step": "Done", "jobId": jobId}}
+    #     )
 
-    if os.path.exists("agent_response.txt"):
-        with open("agent_response.txt", "r") as f:
-            agent_response = f.read()
+    if os.path.exists("assistant_response.txt"):
+        with open("assistant_response.txt", "r") as f:
+            assistant_response = f.read()
     else:
-        agent_response = "No response generated."
+        assistant_response = "No response generated."
 
-    return jsonify({"message": "Analysis completed", "agentResponse": agent_response, "job_id": job_id})
-
+    return jsonify({"message": "Analysis completed", "agentResponse": assistant_response, "jobId": jobId})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
