@@ -1,40 +1,56 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 
 const CreatePhoneCaseConversation = () => {
     const [inputText, setInputText] = useState('');
-    const [responseReceived, setResponseReceived] = useState(false);
+    const [conversationId, setConversationId] = useState(null);
+    const [nextPrompt, setNextPrompt] = useState('');
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputText(e.target.value);
     };
 
-    const handleSubmit = async () => {
+    const startConversation = async (topic) => {
+        try {
+            const response = await axios.post('http://localhost:5000/start_conversation');
+            setConversationId(response.data.conversationId);
+            handleUserResponse(topic);
+        } catch (error) {
+            console.error('Error starting conversation', error);
+        }
+    };
+
+    const handleUserResponse = async (userResponse) => {
+        if (!conversationId) return;
+
+        try {
+            const response = await axios.post(`http://localhost:5000/handle_response/${conversationId}`, {
+                response: userResponse
+            });
+            setNextPrompt(response.data.nextPrompt);
+        } catch (error) {
+            console.error('Error handling response', error);
+        }
+    };
+
+    const handleSubmit = () => {
         if (!inputText) {
             alert("Please fill in the field");
             return;
         }
+        startConversation(inputText);
+    };
 
-        const jobId = uuidv4(); // Generate a unique ID
-
+    const handleEndConversation = async () => {
         try {
-            await axios.post('http://localhost:5000/generate_prompt', {
-                topic: inputText,
-                jobId: jobId // Pass the unique ID along with other data
-            });
-            setResponseReceived(true); // Set response status to true on successful API call
+            const response = await axios.post(`http://localhost:5000/end_conversation/${conversationId}`);
+            alert(response.data.result);
+            setConversationId(null);
+            setNextPrompt('');
         } catch (error) {
-            console.error('Error calling the API', error);
-            setResponseReceived(false);
+            console.error('Error ending conversation', error);
         }
     };
-
-    const handleResponseChoice = (choice: string) => {
-        console.log(choice); // Handle the yes/no response as needed
-        setResponseReceived(false); // Optionally reset the response status
-    };
-
 
     return (
         <div className="flex flex-col space-y-4 p-4">
@@ -53,19 +69,27 @@ const CreatePhoneCaseConversation = () => {
                 Submit
             </button>
 
-            {responseReceived && (
-                <div className="flex flex-wrap gap-2">
+            {nextPrompt && (
+                <div>
+                    <p>{nextPrompt}</p>
+                    <input
+                        type="text"
+                        value={inputText}
+                        onChange={handleInputChange}
+                        className="p-2 border border-gray-300 rounded"
+                        placeholder="Your response"
+                    />
                     <button
-                        onClick={() => handleResponseChoice('yes')}
-                        className="px-4 py-1 text-sm bg-green-500 text-white rounded-full"
+                        onClick={() => handleUserResponse(inputText)}
+                        className="bg-blue-500 text-white p-2 rounded"
                     >
-                        Yes
+                        Respond
                     </button>
                     <button
-                        onClick={() => handleResponseChoice('no')}
-                        className="px-4 py-1 text-sm bg-red-500 text-white rounded-full"
+                        onClick={handleEndConversation}
+                        className="bg-red-500 text-white p-2 rounded"
                     >
-                        No
+                        End Conversation
                     </button>
                 </div>
             )}

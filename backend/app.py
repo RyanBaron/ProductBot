@@ -5,6 +5,7 @@ import sys
 import os
 from pymongo import MongoClient
 from bson import ObjectId
+import uuid  # Import the uuid module
 
 app = Flask(__name__)
 CORS(app, origins=["*"], methods=['GET', 'POST', 'OPTIONS'], allow_headers="*")
@@ -63,6 +64,27 @@ def generate_prompt():
         assistant_response = "No response generated."
 
     return jsonify({"message": "Analysis completed", "agentResponse": assistant_response, "jobId": jobId})
+
+# New conversational endpoints
+@app.route('/start_conversation', methods=['POST'])
+def start_conversation():
+    conversation_id = str(uuid.uuid4())
+    db.conversations.insert_one({"_id": conversation_id, "steps": []})
+    return jsonify({"message": "Conversation started", "conversationId": conversation_id})
+
+@app.route('/handle_response/<conversation_id>', methods=['POST'])
+def handle_response(conversation_id):
+    data = request.json
+    user_response = data.get('response')
+    db.conversations.update_one({"_id": conversation_id}, {"$push": {"steps": user_response}})
+    next_prompt = "What are your preferences for the design?"  # Dynamic prompt generation logic goes here
+    return jsonify({"nextPrompt": next_prompt})
+
+@app.route('/end_conversation/<conversation_id>', methods=['POST'])
+def end_conversation(conversation_id):
+    conversation = db.conversations.find_one({"_id": conversation_id})
+    result = "Your custom design is ready!"  # Process the conversation and generate result
+    return jsonify({"result": result})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
