@@ -1,0 +1,73 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* styles.css or your global CSS file */
+@keyframes fadeIn {
+  0%, 95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.primary-nav,
+.bg-primary,
+.bg-dark,
+.bg-darker,
+.bg-darkest {
+  .mr-wallet-button {
+    color: white;
+  }
+}
+
+.pill {
+  display: inline-block;
+  border-radius: 10px;
+  padding: 2px 6px;
+  line-height: 1.25;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pill-enabled {
+  background-color: white;
+  color: green;
+  border: 1px solid green;
+}
+
+.pill-disabled {
+  background-color: white;
+  color: red;
+  border: 1px solid red;
+}
+
+.bar-graph-animation {
+  transition: width 0.5s ease-out;
+}
+
+.bg-pattern-primary {
+  background-image: url('/images/bg-pattern-primary.png');
+  background-repeat: repeat; /* This will make the image repeat */
+  background-position: center center; /* This starts the pattern from the center */
+  background-color: rgba(3, 66, 192, 0.01)
+}
+
+.wrap-progress-bar {
+  width: 100%;
+  height: 10px;
+  background-color: rgb(229, 231, 235);
+  border: 1px solid rgb(229, 231, 235);
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: rgb(17 24 39);
+}
+
+.mr-menu-list {
+  background-color: #0341c0;
+  color: #fcfcfc;
+}

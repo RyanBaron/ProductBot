@@ -1,0 +1,51 @@
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y curl xz-utils libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 \
+    libxext6 libxi6 libxtst6 libglib2.0-0 libnss3 libgtk-3-0 libxss1 libdrm2 libxkbcommon0 libgbm1 \
+    wget gnupg g++ -y
+
+# Add Google Chrome to the repositories
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+
+# Install Google Chrome
+RUN apt-get update && apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://nodejs.org/dist/v18.2.0/node-v18.2.0-linux-x64.tar.xz | \
+    tar -xJf - -C /usr/local --strip-components=1 --no-same-owner
+
+# Create a non-root user and give them ownership of the /app directory
+RUN useradd -m rbaron && \
+    mkdir /app && \
+    chown rbaron:rbaron /app
+
+# Use a non-root user
+USER rbaron
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy just the requirements.txt first to leverage Docker cache
+COPY --chown=rbaron:rbaron requirements.txt /app/
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Copy package.json and package-lock.json (if available)
+COPY --chown=rbaron:rbaron package.json package-lock.json* /app/
+
+# Install Node.js dependencies
+RUN npm install
+# RUN npm install --only=production
+
+# Now copy in the rest of the backend application
+COPY --chown=rbaron:rbaron . /app
+
+# Make sure to expose the correct port
+EXPOSE 5000
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]

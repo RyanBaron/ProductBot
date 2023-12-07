@@ -1,0 +1,18 @@
+{
+    "name": "productbot-backend",
+    "version": "1.0.0",
+    "description": "Backend service for the ProductBot AI dApp",
+    "scripts": {
+        "start": "node app.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "csv-writer": "^1.6.0",
+        "dotenv": "^16.3.1",
+        "express": "^4.17.1",
+        "mongodb": "^3.6.6",
+        "puppeteer": "^21.5.0"
+    },
+    "author": "rbaron",
+    "license": "ISC"
+}

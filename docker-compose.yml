@@ -1,0 +1,39 @@
+version: '3'
+services:
+  frontend:
+    environment:
+      - RUN_MODE=dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    image: productbot/frontend:latest
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    volumes:
+      - ./frontend:/app
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    image: productbot/backend:latest
+    volumes:
+      - ./backend:/app  # This line assumes that your application code in the container is in /app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+      - ./mongod.conf:/etc/mongod.conf
+    # command: ["mongod", "--config", "/etc/mongod.conf"]
+
+volumes:
+  mongodata:
+  mongologs:

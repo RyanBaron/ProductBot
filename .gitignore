@@ -1,0 +1,26 @@
+.env
+
+# Scraped Data
+/backend/response/*.txt
+/backend/csv/*.csv
+
+# Dependency directories
+node_modules/
+.next/
+.swc/
+
+# Log files
+*.log
+*.log.*
+*.access.log
+
+# Code coverage reports
+coverage/
+
+# macOS specific
+.DS_Store
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+tmp.*
