@@ -63,8 +63,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="container flex-grow my-4 p-4 text-center">
-            <h3 className="text-xl font-semibold">Get Started</h3>
+          <div className="container flex-grow mt-10 mb-4 text-center">
             <CreatePhoneCaseConversation />
           </div>
         </div>
