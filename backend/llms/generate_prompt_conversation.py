@@ -2,20 +2,29 @@ import os
 import sys
 from dotenv import load_dotenv
 from openai import OpenAI
+from pymongo import MongoClient
 print('Running OpenAI Assistant')
 
 # Load environment variables
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
+mongodb_uri = os.getenv('MONGODB_URI')  # Ensure this is set in your .env file
+
 if not openai_api_key:
     raise ValueError("OPENAI_API_KEY is not set in environment variables")
+if not mongodb_uri:
+    raise ValueError("MONGODB_URI is not set in environment variables")
+
+# Connect to MongoDB
+mongo_client = MongoClient(mongodb_uri)
+db = mongo_client.product_bot  # Replace with your actual database name
+conversations = db.conversations  # Replace with your actual collection name
 
 # Create an OpenAI client instance
 client = OpenAI(api_key=openai_api_key)
 
 # Define your topic here
 topic = sys.argv[1]
-# topic = "Futuristic Cityscape"
 
 # Define the messages for the assistant
 messages = [
@@ -29,9 +38,17 @@ messages = [
     },
     {
         "role": "user",
-        "content": f"{topic}"
+        "content": topic
     }
 ]
+
+# Insert initial conversation record in MongoDB
+conversation_record = {
+    "topic": topic,
+    "product": "phone_case",
+    "messages": messages
+}
+conversation_id = conversations.insert_one(conversation_record).inserted_id
 
 # Make the API call using the client instance
 try:
@@ -40,12 +57,16 @@ try:
         model="gpt-3.5-turbo"  # Specify the model
     )
 
-    # Check if response is not empty and extract generated text
     if chat_completion.choices:
         generated_text = chat_completion.choices[0].message.content.strip()
         print(generated_text)
 
-        # Save the response to a file
+        # Update the conversation record with the new message
+        conversations.update_one(
+            {"_id": conversation_id},
+            {"$push": {"messages": {"role": "assistant", "content": generated_text}}}
+        )
+
         with open("assistant_response.txt", "w") as f:
             f.write(generated_text)
     else:
