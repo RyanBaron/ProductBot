@@ -68,17 +68,83 @@ def generate_prompt():
 # New conversational endpoints
 @app.route('/start_conversation', methods=['POST'])
 def start_conversation():
-    conversation_id = str(uuid.uuid4())
-    db.conversations.insert_one({"_id": conversation_id, "steps": []})
-    return jsonify({"message": "Conversation started", "conversationId": conversation_id})
+    try:
+        user_topic = request.json.get('topic', '')
+        conversation_id = str(uuid.uuid4())
+
+
+        # Call the generate_prompt_conversation.py script as a subprocess
+        prompt_result = subprocess.run(
+            ['python', 'llms/generate_prompt_conversation.py', user_topic, conversation_id],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True  # This is for Python 3.7+ to handle text output
+        )
+
+        # Check if the subprocess ran successfully
+        if prompt_result.returncode == 0:
+            # Extract the generated prompt from the subprocess output
+            generated_prompt = prompt_result.stdout.strip()
+
+            # Create a new conversation in the database with the initial question
+            db.conversations.insert_one({
+                "_id": conversation_id,
+                "steps": [],
+                "question": generated_prompt,
+                "options": []  # You can store options here if needed
+            })
+
+            return jsonify({
+                "message": "Conversation started",
+                "conversationId": conversation_id,
+                "question": generated_prompt,
+            })
+        else:
+            # Handle subprocess error
+            error_message = prompt_result.stderr
+            return jsonify({
+                "error": "Error generating conversation prompt",
+                "details": error_message
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e)
+        }), 500
 
 @app.route('/handle_response/<conversation_id>', methods=['POST'])
 def handle_response(conversation_id):
     data = request.json
     user_response = data.get('response')
-    db.conversations.update_one({"_id": conversation_id}, {"$push": {"steps": user_response}})
-    next_prompt = "What are your preferences for the design?"  # Dynamic prompt generation logic goes here
-    return jsonify({"nextPrompt": next_prompt})
+
+    # Retrieve the conversation from the database
+    conversation = db.conversations.find_one({"_id": conversation_id})
+
+    if conversation:
+        # Add user's response to conversation history
+        conversation['steps'].append(user_response)
+
+        # Determine the next question based on the user's choice
+        if user_response.lower() == "option a":
+            next_question = "You selected Option A. What specific information would you like about Option A?"
+        elif user_response.lower() == "option b":
+            next_question = "You selected Option B. What specific information would you like about Option B?"
+        else:
+            next_question = "I'm sorry, I didn't understand your choice. Please select Option A or Option B."
+
+        # Update the conversation with the next question
+        db.conversations.update_one({"_id": conversation_id}, {
+            "$set": {
+                "question": next_question,
+                "options": []  # Clear options since the user has made a choice
+            }
+        })
+
+        return jsonify({"nextQuestion": next_question})
+
+    return jsonify({"message": "Conversation not found"})
+
 
 @app.route('/end_conversation/<conversation_id>', methods=['POST'])
 def end_conversation(conversation_id):
