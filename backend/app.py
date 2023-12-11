@@ -65,6 +65,8 @@ def generate_prompt():
 
     return jsonify({"message": "Analysis completed", "agentResponse": assistant_response, "jobId": jobId})
 
+
+
 # New conversational endpoints
 @app.route('/start_conversation', methods=['POST'])
 def start_conversation():
@@ -112,6 +114,9 @@ def start_conversation():
             "error": "Internal server error",
             "details": str(e)
         }), 500
+
+
+
 
 @app.route('/handle_response/<conversation_id>', methods=['POST'])
 def handle_response(conversation_id):
