@@ -31,7 +31,7 @@ const CreatePhoneCaseConversation = () => {
         setInputText(e.target.value);
     };
 
-    const startConversation = async (topic) => {
+    const startConversation = async (topic: string) => {
         try {
             setConversationInProgress(true);
 
@@ -41,25 +41,36 @@ const CreatePhoneCaseConversation = () => {
                 <div key={`user-${new Date().getTime()}`} className="text-user text-right">{topic}</div>
             ]);
 
+            setInputText(''); // Clear the input field immediately after updating the history
+
             const response = await axios.post('http://localhost:5000/start_conversation', { topic }, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
             setConversationId(response.data.conversationId);
 
-            // Check for a successful start of the conversation
             if (response.data.message === "Conversation started") {
                 setQuestionText(response.data.question);
-                // You may call handleUserResponse here if it is meant to handle the bot's first response.
+
+                // Append the question to the conversation history
+                setConversationHistory(prevHistory => [
+                    ...prevHistory,
+                    <div key={`question-${new Date().getTime()}`} className="text-context text-left">
+                        {response.data.question}
+                    </div>
+                ]);
+
+                // Call handleUserResponse to handle the bot's first response (if needed)
+                handleUserResponse(topic);
             }
 
-            setInputText(''); // Clear the input field
         } catch (error) {
             console.error('Error starting conversation', error);
         } finally {
             setConversationInProgress(false);
         }
     };
+
 
     const handleUserResponse = async (userResponse) => {
         if (!conversationId) return;
