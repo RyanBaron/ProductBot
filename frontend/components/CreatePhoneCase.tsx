@@ -9,7 +9,7 @@ const CreatePhoneCaseConversation = () => {
     const [isConversationInProgress, setConversationInProgress] = useState(false);
     const [typingEffect, setTypingEffect] = useState(true);
     const [questionText, setQuestionText] = useState('');
-    const [conversationHistory, setConversationHistory] = useState([]);
+    const [conversationHistory, setConversationHistory] = useState<JSX.Element[]>([]);
     const conversationEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -34,19 +34,29 @@ const CreatePhoneCaseConversation = () => {
     const startConversation = async (topic) => {
         try {
             setConversationInProgress(true);
+
+            // Update conversation history with the user's input
+            setConversationHistory(prevHistory => [
+                ...prevHistory,
+                <div key={`user-${new Date().getTime()}`} className="text-user text-right">{topic}</div>
+            ]);
+
             const response = await axios.post('http://localhost:5000/start_conversation', { topic }, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
             setConversationId(response.data.conversationId);
 
+            // Check for a successful start of the conversation
             if (response.data.message === "Conversation started") {
                 setQuestionText(response.data.question);
+                // You may call handleUserResponse here if it is meant to handle the bot's first response.
             }
 
-            handleUserResponse(topic);
+            setInputText(''); // Clear the input field
         } catch (error) {
             console.error('Error starting conversation', error);
+        } finally {
             setConversationInProgress(false);
         }
     };
@@ -60,12 +70,14 @@ const CreatePhoneCaseConversation = () => {
             });
 
             // Append API response to conversation history
-            setConversationHistory([...conversationHistory,
-                { text: userResponse, type: 'user' }, // User input
-                { text: response.data.botResponse, type: 'bot' } // API response
+            setConversationHistory(prevHistory => [
+                ...prevHistory,
+                <div key={`bot-${new Date().getTime()}`} className="text-context text-left">
+                    {response.data.botResponse}
+                </div>
             ]);
-            setNextPrompt(response.data.nextPrompt);
-            setResponseText(response.data.botResponse);
+
+            // Additional state updates based on the response
         } catch (error) {
             console.error('Error handling response', error);
         } finally {
@@ -73,17 +85,14 @@ const CreatePhoneCaseConversation = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!inputText) {
             alert("Please fill in the field");
             return;
         }
 
-        // Append user input to conversation history and start conversation
-        setConversationHistory([...conversationHistory, { text: inputText, type: 'user' }]);
-        startConversation(inputText);
-        setInputText('');
+        await startConversation(inputText); // Await the response from startConversation
     };
 
     const handleEndConversation = async () => {
@@ -101,20 +110,18 @@ const CreatePhoneCaseConversation = () => {
     return (
         <div className="wrap-conversation flex flex-wrap justify-center items-start h-full">
             <div className="w-full lg:w-2/3">
-                <div className="conversation-part conversation-initial text-left">
-                    <p className={typingEffect ? "typing-effect" : "typing-effect-final"}>
+                <div className="conversation-history">
+                    <div className="text-bot text-left">
                         Tell me about the design you would like to create...
-                    </p>
-                </div>
-                <div className="conversation-part conversation-continued">
-                    {questionText && <div className="conversation-response text-left">{questionText}</div>}
+                    </div>
                     {conversationHistory.map((item, index) => (
-                        <div key={index} className={`text-left ${item.type === 'user' ? 'user-text' : 'bot-text'}`}>
-                            {item.text}
+                        <div key={index} className={`text-conversation ${item.props.className}`}>
+                            {item}
                         </div>
                     ))}
                     <div ref={conversationEndRef} /> {/* Invisible element at the bottom */}
                 </div>
+
                 <div className="conversation-part conversation-current mt-4">
                     <div className="flex flex-col w-full">
                         <form onSubmit={handleSubmit} className="w-full">
