@@ -42,7 +42,7 @@ const CreatePhoneCaseConversation = () => {
             // Append API response to conversation history
             setConversationHistory(prevHistory => [
                 ...prevHistory,
-                <div key={`bot-${new Date().getTime()}`} className="text-context text-left">
+                <div key={`bot-${new Date().getTime()}`} className="text-bot text-left">
                     {response.data.botResponse}
                 </div>
             ]);
@@ -65,7 +65,12 @@ const CreatePhoneCaseConversation = () => {
                     {userResponse}
                 </div>
             );
-            setConversationHistory(prevHistory => [...prevHistory, newUserElement]);
+            const loadingElement = (
+                <div key={`loading-${new Date().getTime()}`} className="text-bot text-left">
+                    ...
+                </div>
+            );
+            setConversationHistory(prevHistory => [...prevHistory, newUserElement, loadingElement]);
 
             // Clear the input field immediately after updating the history
             setInputText('');
@@ -87,17 +92,18 @@ const CreatePhoneCaseConversation = () => {
                 setConversationId(response.data.conversationId);
             }
 
-            // Append the bot's response to the conversation history
+            // Replace the loading element with the bot's response
             if (response.data.botResponse) {
                 const newBotElement = (
-                    <div key={`bot-${new Date().getTime()}`} className="text-context text-left">
+                    <div key={`bot-${new Date().getTime()}`} className="text-bot text-left">
                         {response.data.botResponse}
                     </div>
                 );
-                setConversationHistory(prevHistory => [...prevHistory, newBotElement]);
+                setConversationHistory(prevHistory => {
+                    // Remove the last element (loading) and add the new bot response
+                    return [...prevHistory.slice(0, -1), newBotElement];
+                });
             }
-
-            setInputText(''); // Clear the input field after handling the response
 
         } catch (error) {
             console.error('Error in conversation', error);
@@ -105,7 +111,6 @@ const CreatePhoneCaseConversation = () => {
             setConversationInProgress(false);
         }
     };
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();

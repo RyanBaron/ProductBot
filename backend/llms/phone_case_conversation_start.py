@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from openai import OpenAI
 from pymongo import MongoClient
-print('Running OpenAI Assistant')
+# print('LLM - PHONE CASE CONVERSATION START')
 
 # Load environment variables
 load_dotenv()
@@ -23,8 +23,9 @@ conversations = db.conversations  # Replace with your actual collection name
 # Create an OpenAI client instance
 client = OpenAI(api_key=openai_api_key)
 
-# Define your topic here
+# Retrieve topic and conversation ID from arguments
 topic = sys.argv[1]
+conversation_id = sys.argv[2]  # Get the conversation ID passed from app.py
 
 # Define the messages for the assistant
 messages = [
@@ -43,7 +44,9 @@ messages = [
 ]
 
 # Insert initial conversation record in MongoDB
+# Define the conversation record
 conversation_record = {
+    "_id": conversation_id,  # Use the passed conversation ID
     "topic": topic,
     "product": "phone_case",
     "messages": messages
