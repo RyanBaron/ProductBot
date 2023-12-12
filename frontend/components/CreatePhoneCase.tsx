@@ -31,47 +31,6 @@ const CreatePhoneCaseConversation = () => {
         setInputText(e.target.value);
     };
 
-    const startConversation = async (topic: string) => {
-        try {
-            setConversationInProgress(true);
-
-            // Update conversation history with the user's input
-            setConversationHistory(prevHistory => [
-                ...prevHistory,
-                <div key={`user-${new Date().getTime()}`} className="text-user text-right">{topic}</div>
-            ]);
-
-            setInputText(''); // Clear the input field immediately after updating the history
-
-            const response = await axios.post('http://localhost:5000/start_conversation', { topic }, {
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            setConversationId(response.data.conversationId);
-
-            if (response.data.message === "Conversation started") {
-                setQuestionText(response.data.question);
-
-                // Append the question to the conversation history
-                setConversationHistory(prevHistory => [
-                    ...prevHistory,
-                    <div key={`question-${new Date().getTime()}`} className="text-context text-left">
-                        {response.data.question}
-                    </div>
-                ]);
-
-                // Call handleUserResponse to handle the bot's first response (if needed)
-                handleUserResponse(topic);
-            }
-
-        } catch (error) {
-            console.error('Error starting conversation', error);
-        } finally {
-            setConversationInProgress(false);
-        }
-    };
-
-
     const handleUserResponse = async (userResponse) => {
         if (!conversationId) return;
 
@@ -96,6 +55,58 @@ const CreatePhoneCaseConversation = () => {
         }
     };
 
+    const handleConversation = async (userResponse) => {
+        try {
+            setConversationInProgress(true);
+
+            // Append user input to conversation history
+            const newUserElement = (
+                <div key={`user-${new Date().getTime()}`} className="text-user text-right">
+                    {userResponse}
+                </div>
+            );
+            setConversationHistory(prevHistory => [...prevHistory, newUserElement]);
+
+            // Clear the input field immediately after updating the history
+            setInputText('');
+
+            // Prepare the payload for the POST request
+            const payload = { response: userResponse };
+            if (conversationId) {
+                // Include the conversation ID for ongoing conversations
+                payload.conversationId = conversationId;
+            }
+
+            // Make the POST request to the server
+            const response = await axios.post('http://localhost:5000/conversation', payload, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            // Update the conversation ID for new conversations
+            if (!conversationId && response.data.conversationId) {
+                setConversationId(response.data.conversationId);
+            }
+
+            // Append the bot's response to the conversation history
+            if (response.data.botResponse) {
+                const newBotElement = (
+                    <div key={`bot-${new Date().getTime()}`} className="text-context text-left">
+                        {response.data.botResponse}
+                    </div>
+                );
+                setConversationHistory(prevHistory => [...prevHistory, newBotElement]);
+            }
+
+            setInputText(''); // Clear the input field after handling the response
+
+        } catch (error) {
+            console.error('Error in conversation', error);
+        } finally {
+            setConversationInProgress(false);
+        }
+    };
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!inputText) {
@@ -103,7 +114,7 @@ const CreatePhoneCaseConversation = () => {
             return;
         }
 
-        await startConversation(inputText); // Await the response from startConversation
+        await handleConversation(inputText, conversationId);
     };
 
     const handleEndConversation = async () => {

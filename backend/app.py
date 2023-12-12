@@ -65,58 +65,54 @@ def generate_prompt():
 
     return jsonify({"message": "Analysis completed", "agentResponse": assistant_response, "jobId": jobId})
 
-
-
-# New conversational endpoints
-@app.route('/start_conversation', methods=['POST'])
-def start_conversation():
+@app.route('/conversation', methods=['POST'])
+def handle_conversation():
     try:
-        user_topic = request.json.get('topic', '')
-        conversation_id = str(uuid.uuid4())
+        user_response = request.json.get('response', '')
+        conversation_id = request.json.get('conversationId')
 
+        if not conversation_id:
+            # No conversation ID, start a new conversation
+            conversation_id = str(uuid.uuid4())
 
-        # Call the generate_prompt_conversation.py script as a subprocess
-        prompt_result = subprocess.run(
-            ['python', 'llms/generate_prompt_conversation.py', user_topic, conversation_id],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True  # This is for Python 3.7+ to handle text output
+            # Generate the initial prompt for a new conversation
+            prompt_result = subprocess.run(
+                ['python', 'llms/generate_prompt_conversation.py', user_response, conversation_id],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            if prompt_result.returncode == 0:
+                generated_prompt = prompt_result.stdout.strip()
+                message = "Conversation started"
+            else:
+                error_message = prompt_result.stderr
+                return jsonify({"error": "Error generating conversation prompt", "details": error_message}), 500
+
+        else:
+            # Existing conversation ID, continue the conversation
+            generated_prompt = "Your logic to handle ongoing conversation goes here"
+            message = "Continuing conversation"
+
+        # Update or create a conversation in the database
+        db.conversations.update_one(
+            {"_id": conversation_id},
+            {"$push": {"steps": user_response}},
+            upsert=True
         )
 
-        # Check if the subprocess ran successfully
-        if prompt_result.returncode == 0:
-            # Extract the generated prompt from the subprocess output
-            generated_prompt = prompt_result.stdout.strip()
-
-            # Create a new conversation in the database with the initial question
-            db.conversations.insert_one({
-                "_id": conversation_id,
-                "steps": [],
-                "question": generated_prompt,
-                "options": []  # You can store options here if needed
-            })
-
-            return jsonify({
-                "message": "Conversation started",
-                "conversationId": conversation_id,
-                "question": generated_prompt,
-            })
-        else:
-            # Handle subprocess error
-            error_message = prompt_result.stderr
-            return jsonify({
-                "error": "Error generating conversation prompt",
-                "details": error_message
-            }), 500
+        return jsonify({
+            "message": message,
+            "conversationId": conversation_id,
+            "botResponse": generated_prompt,
+        })
 
     except Exception as e:
         return jsonify({
             "error": "Internal server error",
             "details": str(e)
         }), 500
-
-
-
 
 @app.route('/handle_response/<conversation_id>', methods=['POST'])
 def handle_response(conversation_id):

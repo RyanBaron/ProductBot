@@ -92,3 +92,11 @@
   letter-spacing: .15em;
   text-align: left;
 }
+
+.conversation-history {
+  .text-conversation {
+    padding: 0.5rem 1rem;
+    margin: 0.75rem 0;
+    background-color: white;
+  }
+}
