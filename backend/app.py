@@ -35,6 +35,10 @@ def mongodb_status():
     except Exception as e:
         return jsonify({"status": f"Failure: Cannot connect to DB: {str(e)}", "success": False})
 
+@app.route('/generate_image', methods=['POST'])
+def generate_image():
+    return jsonify({"status": "TEST: Generate image route", "success": True})
+
 @app.route('/conversation', methods=['POST'])
 def handle_conversation():
     try:
