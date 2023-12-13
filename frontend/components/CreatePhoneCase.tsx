@@ -11,21 +11,38 @@ const CreatePhoneCaseConversation = () => {
     const [questionText, setQuestionText] = useState('');
     const [conversationHistory, setConversationHistory] = useState<JSX.Element[]>([]);
     const conversationEndRef = useRef(null);
+    const [showGenerateImageButton, setShowGenerateImageButton] = useState(false);
+    const [imageUrl, setImageUrl] = useState('');
+
+    const handleShowImage = async () => {
+        // Fetch the image URL or set it here
+        const fetchedImageUrl = ''; // Replace with actual logic to fetch or set the image URL
+        if( fetchedImageUrl )
+            setImageUrl(fetchedImageUrl);
+    };
 
     const scrollToBottom = () => {
         conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [conversationHistory]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setTypingEffect(false);
-        }, 3500);
-        return () => clearTimeout(timer);
-    }, []);
+    // Define an async function for the image generation API call
+    const generateImage = async () => {
+        try {
+            const response = await axios.post(`http://localhost:5000/generate_image`, {
+                conversationId: conversationId,
+                prompt: inputText
+            });
+
+            if (response.data.imageUrl) {
+                setImageUrl(response.data.imageUrl);
+            }
+        } catch (error) {
+            console.error('Error generating image', error);
+        }
+    };
+
+
 
     const handleInputChange = (e) => {
         setInputText(e.target.value);
@@ -58,6 +75,8 @@ const CreatePhoneCaseConversation = () => {
     const handleConversation = async (userResponse) => {
         try {
             setConversationInProgress(true);
+
+            // setShowGenerateImageButton(false); // Hide the image on new form submissions
 
             // Append user input to conversation history
             const newUserElement = (
@@ -94,6 +113,7 @@ const CreatePhoneCaseConversation = () => {
 
             // Replace the loading element with the bot's response
             if (response.data.botResponse) {
+
                 const newBotElement = (
                     <div key={`bot-${new Date().getTime()}`} className="text-bot text-left">
                         {response.data.botResponse}
@@ -103,6 +123,9 @@ const CreatePhoneCaseConversation = () => {
                     // Remove the last element (loading) and add the new bot response
                     return [...prevHistory.slice(0, -1), newBotElement];
                 });
+
+                setShowGenerateImageButton(true);  // Show the 'Show me the image' button after initial response
+
             }
 
         } catch (error) {
@@ -120,6 +143,9 @@ const CreatePhoneCaseConversation = () => {
         }
 
         await handleConversation(inputText, conversationId);
+
+        // Call the async function
+        await generateImage();
     };
 
     const handleEndConversation = async () => {
@@ -133,6 +159,17 @@ const CreatePhoneCaseConversation = () => {
             console.error('Error ending conversation', error);
         }
     };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [conversationHistory]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setTypingEffect(false);
+        }, 3500);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <div className="wrap-conversation flex flex-wrap justify-center items-start h-full">
@@ -149,6 +186,12 @@ const CreatePhoneCaseConversation = () => {
                     <div ref={conversationEndRef} /> {/* Invisible element at the bottom */}
                 </div>
 
+                {imageUrl && (
+                    <div className="image-container my-4">
+                        <img src={imageUrl} alt="Generated Image" />
+                    </div>
+                )}
+
                 <div className="conversation-part conversation-current mt-4">
                     <div className="flex flex-col w-full">
                         <form onSubmit={handleSubmit} className="w-full">
@@ -163,6 +206,15 @@ const CreatePhoneCaseConversation = () => {
                                 />
                             </div>
                             <div className="buttons text-left flex w-full justify-end">
+                                {showGenerateImageButton && (
+                                    <button
+                                        onClick={handleShowImage}
+                                        className="bg-green-500 text-white p-2 rounded mt-2"
+                                    >
+                                        Show me the image
+                                    </button>
+                                )}
+
                                 <button
                                     type="submit"
                                     className={`bg-blue-500 text-white p-2 rounded mt-2 ${isConversationInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
