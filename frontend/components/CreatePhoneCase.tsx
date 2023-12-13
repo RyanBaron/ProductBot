@@ -14,24 +14,22 @@ const CreatePhoneCaseConversation = () => {
     const [showGenerateImageButton, setShowGenerateImageButton] = useState(false);
     const [imageUrl, setImageUrl] = useState('');
 
+    /*
     const handleShowImage = async () => {
         // Fetch the image URL or set it here
         const fetchedImageUrl = ''; // Replace with actual logic to fetch or set the image URL
         if( fetchedImageUrl )
             setImageUrl(fetchedImageUrl);
     };
-
-    const scrollToBottom = () => {
-        conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-
+    */
 
     // Define an async function for the image generation API call
     const generateImage = async () => {
+        if (!conversationId) return;
+
         try {
             const response = await axios.post(`http://localhost:5000/generate_image`, {
                 conversationId: conversationId,
-                prompt: inputText
             });
 
             if (response.data.imageUrl) {
@@ -41,6 +39,35 @@ const CreatePhoneCaseConversation = () => {
             console.error('Error generating image', error);
         }
     };
+
+    const handleShowImage = async () => {
+        alert('handle show image started');
+        // Call the async function
+        await generateImage();
+    };
+
+    const scrollToBottom = () => {
+        conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    /*
+    // Define an async function for the image generation API call
+    const generateImage = async () => {
+        if (!conversationId) return;
+
+        try {
+            const response = await axios.post(`http://localhost:5000/generate_image`, {
+                conversationId: conversationId,
+            });
+
+            if (response.data.imageUrl) {
+                setImageUrl(response.data.imageUrl);
+            }
+        } catch (error) {
+            console.error('Error generating image', error);
+        }
+    };
+    */
 
 
 
@@ -145,7 +172,7 @@ const CreatePhoneCaseConversation = () => {
         await handleConversation(inputText, conversationId);
 
         // Call the async function
-        await generateImage();
+        //await generateImage();
     };
 
     const handleEndConversation = async () => {
@@ -208,10 +235,11 @@ const CreatePhoneCaseConversation = () => {
                             <div className="buttons text-left flex w-full justify-end">
                                 {showGenerateImageButton && (
                                     <button
+                                        type="button"  // Explicitly set the button type to 'button'
                                         onClick={handleShowImage}
                                         className="bg-green-500 text-white p-2 rounded mt-2"
                                     >
-                                        Show me the image
+                                        Genereate Images
                                     </button>
                                 )}
 

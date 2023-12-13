@@ -37,7 +37,42 @@ def mongodb_status():
 
 @app.route('/generate_image', methods=['POST'])
 def generate_image():
-    return jsonify({"status": "TEST: Generate image route", "success": True})
+    message = "testing message"
+    conversation_id = "1234"
+    generated_image = "generated image"
+
+
+    try:
+        '''
+        conversation_id = request.json.get('conversationId')
+
+        image_result = subprocess.run(
+            ['python', 'llms/phone_case_generate_images.py', conversation_id],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        if image_result.returncode == 0:
+            generated_image = image_result.stdout.strip()
+            message = "aaaaImage generation started"
+        else:
+            error_message = image_result.stderr
+            return jsonify({"error": "Error generating image prompt", "details": error_message}), 500
+        '''
+
+    except Exception as e:
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e)
+        }), 500
+
+
+    return jsonify({
+        "message": message,
+        "conversationId": conversation_id,
+        "botResponse": generated_image,
+    })
 
 @app.route('/conversation', methods=['POST'])
 def handle_conversation():

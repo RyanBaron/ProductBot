@@ -70,8 +70,10 @@ try:
             {"$push": {"messages": {"role": "assistant", "content": generated_text}}}
         )
 
+        '''
         with open("assistant_response.txt", "w") as f:
             f.write(generated_text)
+        '''
     else:
         print("No response received from the API.")
 

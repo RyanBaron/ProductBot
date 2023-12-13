@@ -51,8 +51,10 @@ try:
         print(formatted_text)
 
         # Save the response to a file
+        '''
         with open("assistant_response.txt", "w") as f:
             f.write(formatted_text)
+        '''
     else:
         print("No response received from the API.")
 
