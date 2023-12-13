@@ -14,7 +14,7 @@ CORS(app, origins=["*"], methods=['GET', 'POST', 'OPTIONS'], allow_headers="*")
 # Uncomment the below line to connect to a local MongoDB instance
 # client = MongoClient('mongodb://localhost:27017/')
 client = MongoClient('mongodb://mongo:27017/')
-db = client.productbot
+db = client.product_bot
 
 def options():
     response = make_response()
@@ -79,6 +79,7 @@ def handle_conversation():
     try:
         user_response = request.json.get('response', '')
         conversation_id = request.json.get('conversationId')
+        generated_prompt = ""
 
         if not conversation_id:
             # No conversation ID, start a new conversation
@@ -93,7 +94,7 @@ def handle_conversation():
             )
 
             if prompt_result.returncode == 0:
-                generated_prompt = prompt_result.stdout.strip()
+                generated_response = prompt_result.stdout.strip()
                 message = "Conversation started"
             else:
                 error_message = prompt_result.stderr
@@ -110,24 +111,28 @@ def handle_conversation():
                 text=True
             )
 
+            # Check if the subprocess call was successful
             if prompt_result.returncode == 0:
-                generated_prompt = prompt_result.stdout.strip()
-                message = "Conversation continued"
-            else:
-                error_message = prompt_result.stderr
-                return jsonify({"error": "Error generating conversation prompt", "details": error_message}), 500
+                # Fetch the conversation from the database to get the latest message
+                conversation = db.conversations.find_one({"_id": conversation_id})
 
-        # Update or create a conversation in the database
-        db.conversations.update_one(
-            {"_id": conversation_id},
-            {"$push": {"steps": user_response}},
-            upsert=True
-        )
+                # Debugging: Print or log the conversation to see what it contains
+                print("Fetched conversation:", conversation)
+
+                if conversation and "messages" in conversation:
+                    last_message = conversation["messages"][-1]  # Get the last message
+                    generated_response = last_message.get("content", "")
+                    generated_prompt = last_message.get("prompt", "")
+                    message = "Conversation continued"
+                else:
+                    return jsonify({"error": "No conversation found with the provided ID", 'conversation_id': conversation_id, 'conversation': conversation}), 404
+
 
         return jsonify({
             "message": message,
             "conversationId": conversation_id,
-            "botResponse": generated_prompt,
+            "botResponse": generated_response,
+            "generatedPrompt": generated_prompt,
         })
 
     except Exception as e:
@@ -135,8 +140,6 @@ def handle_conversation():
             "error": "Internal server error",
             "details": str(e)
         }), 500
-
-
 
 @app.route('/end_conversation/<conversation_id>', methods=['POST'])
 def end_conversation(conversation_id):

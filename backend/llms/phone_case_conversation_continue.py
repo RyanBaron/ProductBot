@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from openai import OpenAI
 from pymongo import MongoClient
-# print('LLM - PHONE CASE CONVERSATION CONTINUE')
+import re  # Import the regular expressions module
 
 # Load environment variables
 load_dotenv()
@@ -49,13 +49,34 @@ try:
 
     if chat_completion.choices:
         generated_text = chat_completion.choices[0].message.content.strip()
-        print(generated_text)
+        # print(generated_text)
+        prompt = ''
+
+        # Define a regex pattern to match the required format
+        pattern = r"/imagine prompt: .* --ar 5:8"
+        match = re.search(pattern, generated_text)
+
+        # If the pattern is found, save it to a new variable and update the database
+        if match:
+            prompt = match.group()  # This contains the matched text
+
+            # Update the conversation record with the new prompt
+            conversations.update_one(
+                {"_id": conversation_id},
+                {"$set": {"prompt_final": prompt}}  # Using $set to add/update the prompt field
+            )
 
         # Update the conversation record with the new message
-        conversations.update_one(
-            {"_id": conversation_id},
-            {"$push": {"messages": {"role": "assistant", "content": generated_text}}}
-        )
+        if prompt:
+            conversations.update_one(
+                {"_id": conversation_id},
+                {"$push": {"messages": {"role": "assistant", "content": generated_text, "prompt": prompt}}}
+            )
+        else:
+            conversations.update_one(
+                {"_id": conversation_id},
+                {"$push": {"messages": {"role": "assistant", "content": generated_text}}}
+            )
     else:
         print("No response received from the API.")
 
